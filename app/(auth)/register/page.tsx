@@ -8,15 +8,10 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const imageSrc =
-    "https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=1200&auto=format&fit=crop";
-
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
 
-    console.log({
-      fullName,
+    e.preventDefault();
+    console.log({fullName,
       email,
       password,
       confirmPassword,
@@ -26,29 +21,25 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#f4f7fb] flex items-center justify-center p-4">
       <div className="bg-white rounded-[32px] shadow-2xl overflow-hidden flex w-full max-w-5xl">
-
         {/* LEFT PANEL */}
         <div className="hidden md:flex md:w-[45%] relative flex-col min-h-[580px]">
           <div className="absolute inset-0">
             <img
-              src={imageSrc}
+              src= "/register.png"
               alt="doctor consultation"
               className="w-full h-full object-cover"
             />
-
             <div className="absolute inset-0 bg-gradient-to-t from-[#2f6f7e]/90 via-transparent to-transparent" />
           </div>
         </div>
 
         {/* RIGHT PANEL */}
         <div className="flex-1 p-10 md:p-14 relative">
-
           <div className="mb-6">
             <h1 className="text-[40px] font-bold text-[#1d2b36] mb-1">
               Create Account
             </h1>
           </div>
-
           <form onSubmit={handleSubmit} className="space-y-6">
 
             {/* FULL NAME */}
@@ -56,7 +47,6 @@ export default function RegisterPage() {
               <label className="block text-[15px] font-medium mb-2 text-gray-700">
                 Full Name
               </label>
-
               <input
                 type="text"
                 placeholder="Enter your full name"
@@ -71,7 +61,6 @@ export default function RegisterPage() {
               <label className="block text-[15px] font-medium mb-2 text-gray-700">
                 Email Address
               </label>
-
               <input
                 type="email"
                 placeholder="Enter your email"
@@ -86,7 +75,6 @@ export default function RegisterPage() {
               <label className="block text-[15px] font-medium mb-2 text-gray-700">
                 Password
               </label>
-
               <input
                 type="password"
                 placeholder="Enter password"
@@ -101,7 +89,6 @@ export default function RegisterPage() {
               <label className="block text-[15px] font-medium mb-2 text-gray-700">
                 Confirm Password
               </label>
-
               <input
                 type="password"
                 placeholder="Confirm password"

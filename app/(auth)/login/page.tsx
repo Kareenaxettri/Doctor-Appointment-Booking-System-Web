@@ -7,9 +7,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const imageSrc =
-    "https://images.unsplash.com/photo-1700832082152-0416a3ee5e60?w=800&auto=format&fit=crop&q=80";
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({ email, password });
@@ -23,7 +20,7 @@ export default function LoginPage() {
         <div className="hidden md:flex md:w-[45%] relative flex-col min-h-[580px]">
           <div className="absolute inset-0">
             <img
-              src={imageSrc}
+              src="/login.png"
               alt="doctor consultation"
               className="w-full h-full object-cover"
             />
