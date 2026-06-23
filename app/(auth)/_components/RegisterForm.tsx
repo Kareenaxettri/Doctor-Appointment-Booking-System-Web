@@ -92,59 +92,21 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* FIRST NAME */}
+            {/* FULL NAME */}
             <div>
               <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                First Name
+                Full Name
               </label>
               <input
                 type="text"
-                placeholder="Enter first name"
-                {...register("firstName")}
+                placeholder="Enter your full name"
+                {...register("fullName")}
                 className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
                 outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
               />
-              {errors.firstName && (
+              {errors.fullName && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.firstName.message}
-                </p>
-              )}
-            </div>
-
-            {/* LAST NAME */}
-            <div>
-              <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                Last Name
-              </label>
-              <input
-                type="text"
-                placeholder="Enter last name"
-                {...register("lastName")}
-                className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
-              />
-              {errors.lastName && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.lastName.message}
-                </p>
-              )}
-            </div>
-
-            {/* USERNAME */}
-            <div>
-              <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                Username
-              </label>
-              <input
-                type="text"
-                placeholder="Choose username"
-                {...register("username")}
-                className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
-              />
-              {errors.username && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.username.message}
+                  {errors.fullName.message}
                 </p>
               )}
             </div>
@@ -166,6 +128,51 @@ export default function RegisterPage() {
                   {errors.email.message}
                 </p>
               )}
+            </div>
+
+            {/* PHONE NUMBER + GENDER */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[15px] font-medium mb-2 text-gray-700">
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="98XXXXXXXX"
+                  {...register("contactNumber")}
+                  className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
+                  outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
+                />
+                {errors.contactNumber && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.contactNumber.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[15px] font-medium mb-2 text-gray-700">
+                  Gender
+                </label>
+                <select
+                  defaultValue=""
+                  {...register("gender")}
+                  className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
+                  outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
+                >
+                  <option value="" disabled>
+                    Select
+                  </option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+                {errors.gender && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.gender.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* PASSWORD */}
