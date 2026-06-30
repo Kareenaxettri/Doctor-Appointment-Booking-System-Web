@@ -1,59 +1,46 @@
-// app/(auth)/_components/schema.ts
 import { z } from "zod";
 
-// NOTE: fields here are kept in sync with the backend's Mongoose User model
-// (fullName, contactNumber, email, gender, password are required there).
-export const registerSchema = z.object({
-    fullName: z.string("Full name must be string")
-        .min(2, "Full name must be at least 2 characters long"),
-    contactNumber: z.string("Phone number must be string")
-        .min(7, "Enter a valid phone number"),
-    email: z.email("Invalid email address"),
-    gender: z.enum(["male", "female", "other"], "Please select a gender"),
-    password: z.string("Password must be string")
-        .min(6, "Password must be at least 6 characters long"),
-    confirmPassword: z.string("Confirm Password must be string")
-        .min(6, "Confirm Password must be at least 6 characters long")
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"]
-});
-
-export type RegisterFormData = z.infer<typeof registerSchema>;
-
+// ---- Login ----
 export const loginSchema = z.object({
-    email: z.email("Invalid email address"),
-    password: z.string("Password must be string")
-        .min(6, "Password must be at least 6 characters long")
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
-
 export type LoginFormData = z.infer<typeof loginSchema>;
 
-// Used on the Profile page to update personal information.
-// profileImage is handled separately as a File (see ProfileForm) since
-// react-hook-form + a single FileList field is awkward to validate with zod.
-export const updateProfileSchema = z.object({
-    fullName: z.string("Full name must be string")
-        .min(2, "Full name must be at least 2 characters long"),
-    email: z.email("Invalid email address"),
-    contactNumber: z.string("Phone number must be string")
-        .min(7, "Enter a valid phone number"),
-    gender: z.enum(["male", "female", "other"], "Please select a gender"),
-});
+// ---- Register ----
+export const registerSchema = z
+  .object({
+    fullName: z.string().min(1, "Full name is required"),
+    email: z.string().email("Enter a valid email address"),
+    contactNumber: z.string().min(7, "Contact number is required"),
+    gender: z.string().min(1, "Gender is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+export type RegisterFormData = z.infer<typeof registerSchema>;
 
+// ---- Update profile (matches ProfileForm.tsx fields) ----
+export const updateProfileSchema = z.object({
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Enter a valid email address"),
+  contactNumber: z.string().min(7, "Enter a valid contact number"),
+  gender: z.enum(["male", "female", "other"]),
+});
 export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
 
-// Used on the Profile page's "Change Password" form.
-export const updatePasswordSchema = z.object({
-    currentPassword: z.string("Current password must be string")
-        .min(6, "Password must be at least 6 characters long"),
-    newPassword: z.string("New password must be string")
-        .min(6, "New password must be at least 6 characters long"),
-    confirmNewPassword: z.string("Confirm password must be string")
-        .min(6, "Confirm password must be at least 6 characters long"),
-}).refine((data) => data.newPassword === data.confirmNewPassword, {
+// ---- Update password (matches PasswordForm.tsx fields) ----
+export const updatePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(6, "Current password must be at least 6 characters"),
+    newPassword: z.string().min(6, "New password must be at least 6 characters"),
+    confirmNewPassword: z.string().min(6, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
     message: "Passwords do not match",
-    path: ["confirmNewPassword"]
-});
-
+    path: ["confirmNewPassword"],
+  });
 export type UpdatePasswordFormData = z.infer<typeof updatePasswordSchema>;

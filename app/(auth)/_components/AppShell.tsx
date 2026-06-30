@@ -12,6 +12,8 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
+const adminNavItem = { href: "/admin/users", label: "Admin Panel", icon: ShieldIcon };
+
 export default function AppShell({
   title,
   children,
@@ -22,6 +24,14 @@ export default function AppShell({
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const avatarUrl = getProfileImageUrl(user?.profileImage);
+
+ 
+  const isAdminSection = pathname.startsWith("/admin");
+  const items = isAdminSection
+  ? [adminNavItem]
+  : user?.role === "admin"
+  ? [...navItems, adminNavItem]
+  : navItems;
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] flex">
@@ -35,7 +45,7 @@ export default function AppShell({
         </div>
 
         <nav className="flex-1 space-y-1">
-          {navItems.map((item) => {
+          {items.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
@@ -185,6 +195,21 @@ function UserIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 24 24" fill="none" className={className}>
       <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
       <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
