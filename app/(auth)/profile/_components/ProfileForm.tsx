@@ -11,6 +11,7 @@ import {
 } from "@/app/(auth)/_components/schema";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { getInitials, getProfileImageUrl } from "@/lib/utils";
+import { handleUpdateProfile } from "@/lib/actions/auth-action";
 
 export type ProfileUser = {
   id: string;
@@ -22,16 +23,6 @@ export type ProfileUser = {
   profileImage?: string | null;
   role?: string;
 };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8089";
-
-function getClientToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("auth_token="));
-  return match ? match.split("=")[1] : null;
-}
 
 export default function ProfileForm({
   initialUser,
@@ -48,6 +39,7 @@ export default function ProfileForm({
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -65,12 +57,17 @@ export default function ProfileForm({
     },
   });
 
-  const avatarSrc =
-    imagePreview || getProfileImageUrl(initialUser.profileImage);
+  const avatarSrc = imagePreview || getProfileImageUrl(initialUser.profileImage);
+  const showAvatarImage = Boolean(avatarSrc) && !imgError;
 
   const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setServerError("Image must be less than 5MB");
+      return;
+    }
+    setImgError(false);
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -84,6 +81,7 @@ export default function ProfileForm({
     });
     setImageFile(null);
     setImagePreview(null);
+    setImgError(false);
     setServerError("");
     setIsEditing(false);
   };
@@ -94,13 +92,6 @@ export default function ProfileForm({
 
     startTransition(async () => {
       try {
-        const token = getClientToken();
-
-        if (!token) {
-          setServerError("Not authenticated. Please log in again.");
-          return;
-        }
-
         const formData = new FormData();
         formData.append("fullName", data.fullName);
         formData.append("email", data.email);
@@ -110,62 +101,65 @@ export default function ProfileForm({
           formData.append("profileImage", imageFile);
         }
 
-        const res = await fetch(`${API_BASE}/api/v1/users/profile`, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-
-        const result = await res.json();
+        const result = await handleUpdateProfile(formData);
 
         if (result.success) {
           setSuccessMessage(result.message || "Profile updated successfully");
           setIsEditing(false);
-          setImageFile(null);
-          setImagePreview(null);
 
-          // Update AuthContext user so topbar avatar refreshes immediately
-          setUser((prev: any) => ({
-            ...prev,
-            ...result.data,
-          }));
+          const serverImageUrl = result.data?.profileImage
+            ? getProfileImageUrl(result.data.profileImage)
+            : null;
+          setImgError(false);
+          setImagePreview(serverImageUrl || (imageFile ? URL.createObjectURL(imageFile) : null));
+          setImageFile(serverImageUrl ? null : imageFile);
+
+          if (result.data) {
+            setUser((prev) => ({
+              ...prev,
+              ...result.data,
+            }));
+          }
 
           router.refresh();
         } else {
           setServerError(result.message || "Failed to update profile");
         }
-      } catch (err: any) {
-        setServerError(err?.message || "Something went wrong");
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Something went wrong";
+        setServerError(message);
       }
     });
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8">
+    <div className="card p-6 md:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-bold text-[#1d2b36]">
-          Personal Information
-        </h2>
+        <h2 className="text-lg font-bold" style={{ color: "var(--fg)" }}>Personal Information</h2>
         {!isEditing && (
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="text-sm font-semibold text-white bg-[#2f6f7e] hover:bg-[#285c68] rounded-full px-4 py-2 transition"
+            className="btn-primary btn-hover-scale rounded-full px-5 py-2 text-sm"
           >
-            ✎ Edit Profile
+            Edit Profile
           </button>
         )}
       </div>
 
       {successMessage && !isEditing && (
-        <div className="mb-4 p-3 rounded-xl bg-green-50 text-green-700 text-sm">
+        <div
+          className="mb-4 p-3 rounded-xl text-sm font-medium"
+          style={{ background: "color-mix(in srgb, var(--success) 10%, transparent)", color: "var(--success)", border: "1px solid color-mix(in srgb, var(--success) 20%, transparent)" }}
+        >
           {successMessage}
         </div>
       )}
       {serverError && (
-        <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-600 text-sm">
+        <div
+          className="mb-4 p-3 rounded-xl text-sm font-medium"
+          style={{ background: "color-mix(in srgb, var(--accent) 10%, transparent)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)" }}
+        >
           {serverError}
         </div>
       )}
@@ -173,14 +167,19 @@ export default function ProfileForm({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex items-center gap-4">
           <div className="relative">
-            {avatarSrc ? (
+            {showAvatarImage ? (
               <img
-                src={avatarSrc}
+                src={avatarSrc as string}
                 alt={initialUser.fullName}
-                className="w-20 h-20 rounded-2xl object-cover border border-gray-100"
+                onError={() => setImgError(true)}
+                className="w-20 h-20 rounded-2xl object-cover avatar-hover"
+                style={{ border: "2px solid var(--border-light)" }}
               />
             ) : (
-              <div className="w-20 h-20 rounded-2xl bg-[#2f6f7e] text-white flex items-center justify-center text-2xl font-semibold">
+              <div
+                className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-semibold avatar-hover"
+                style={{ background: "var(--brand)", color: "var(--fg-inverse)" }}
+              >
                 {getInitials(initialUser.fullName)}
               </div>
             )}
@@ -188,10 +187,14 @@ export default function ProfileForm({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#2f6f7e] text-white text-sm flex items-center justify-center border-2 border-white"
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full text-white text-sm flex items-center justify-center"
+                style={{ background: "var(--brand)", border: "2px solid var(--bg-surface)" }}
                 aria-label="Change profile photo"
               >
-                📷
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </button>
             )}
             <input
@@ -203,16 +206,10 @@ export default function ProfileForm({
             />
           </div>
           <div>
-            <p className="font-semibold text-[#1d2b36]">
-              {initialUser.fullName}
-            </p>
-            <p className="text-sm text-gray-400 capitalize">
-              {initialUser.role || "Member"}
-            </p>
+            <p className="font-semibold" style={{ color: "var(--fg)" }}>{initialUser.fullName}</p>
+            <p className="text-sm capitalize" style={{ color: "var(--fg-tertiary)" }}>{initialUser.role || "Member"}</p>
             {isEditing && (
-              <p className="text-xs text-gray-400 mt-1">
-                Tap the camera icon to change your photo
-              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--fg-tertiary)" }}>Tap the camera icon to change your photo</p>
             )}
           </div>
         </div>
@@ -224,6 +221,10 @@ export default function ProfileForm({
               disabled={!isEditing}
               {...register("fullName")}
               className={inputClass(isEditing)}
+              style={isEditing
+                ? { background: "var(--bg-input)", borderColor: "var(--border)", color: "var(--fg)" }
+                : { background: "var(--bg-surface)", color: "var(--fg)" }
+              }
             />
           </Field>
 
@@ -233,6 +234,10 @@ export default function ProfileForm({
               disabled={!isEditing}
               {...register("email")}
               className={inputClass(isEditing)}
+              style={isEditing
+                ? { background: "var(--bg-input)", borderColor: "var(--border)", color: "var(--fg)" }
+                : { background: "var(--bg-surface)", color: "var(--fg)" }
+              }
             />
           </Field>
 
@@ -242,6 +247,10 @@ export default function ProfileForm({
               disabled={!isEditing}
               {...register("contactNumber")}
               className={inputClass(isEditing)}
+              style={isEditing
+                ? { background: "var(--bg-input)", borderColor: "var(--border)", color: "var(--fg)" }
+                : { background: "var(--bg-surface)", color: "var(--fg)" }
+              }
             />
           </Field>
 
@@ -250,6 +259,10 @@ export default function ProfileForm({
               disabled={!isEditing}
               {...register("gender")}
               className={inputClass(isEditing)}
+              style={isEditing
+                ? { background: "var(--bg-input)", borderColor: "var(--border)", color: "var(--fg)" }
+                : { background: "var(--bg-surface)", color: "var(--fg)" }
+              }
             >
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -263,7 +276,7 @@ export default function ProfileForm({
             <button
               type="submit"
               disabled={isSubmitting || isPending}
-              className="bg-[#2f6f7e] hover:bg-[#285c68] text-white text-sm font-semibold rounded-2xl px-6 py-3 transition disabled:opacity-50"
+              className="btn-primary rounded-2xl px-6 py-3 text-sm disabled:opacity-50"
             >
               {isPending ? "Saving..." : "Save Changes"}
             </button>
@@ -271,7 +284,7 @@ export default function ProfileForm({
               type="button"
               onClick={onCancel}
               disabled={isPending}
-              className="text-sm font-semibold text-gray-500 border border-gray-200 rounded-2xl px-6 py-3 transition"
+              className="btn-secondary rounded-2xl px-6 py-3 text-sm"
             >
               Cancel
             </button>
@@ -293,11 +306,11 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+      <label className="block text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--fg-tertiary)" }}>
         {label}
       </label>
       {children}
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && <p className="text-sm mt-1" style={{ color: "var(--accent)" }}>{error}</p>}
     </div>
   );
 }
@@ -305,7 +318,7 @@ function Field({
 function inputClass(editable: boolean) {
   return `w-full rounded-2xl px-4 py-3 text-sm border outline-none transition ${
     editable
-      ? "bg-[#f4f7fb] border-gray-200 text-gray-800 focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20"
-      : "bg-white border-transparent text-[#1d2b36] font-medium"
+      ? "focus:ring-2"
+      : "border-transparent font-medium"
   }`;
 }
