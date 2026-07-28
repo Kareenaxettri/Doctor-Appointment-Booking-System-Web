@@ -29,7 +29,6 @@ export default function PasswordForm() {
     setSuccessMessage("");
 
     startTransition(async () => {
-      // same API + action as the profile update, just a different payload
       const result = await handleUpdatePassword({
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
@@ -45,69 +44,79 @@ export default function PasswordForm() {
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8">
-      <h2 className="text-lg font-bold text-[#1d2b36] mb-6">
-        Change Password
-      </h2>
+    <div className="card p-6 md:p-8">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold" style={{ color: "var(--fg)" }}>Change Password</h2>
+        <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>Use a strong password to protect your healthcare account.</p>
+      </div>
 
       {successMessage && (
-        <div className="mb-4 p-3 rounded-xl bg-green-50 text-green-700 text-sm">
+        <div
+          className="mb-4 rounded-2xl p-4 text-sm font-medium"
+          style={{ background: "color-mix(in srgb, var(--success) 10%, transparent)", color: "var(--success)", border: "1px solid color-mix(in srgb, var(--success) 20%, transparent)" }}
+        >
           {successMessage}
         </div>
       )}
       {serverError && (
-        <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-600 text-sm">
+        <div
+          className="mb-4 rounded-2xl p-4 text-sm font-medium"
+          style={{ background: "color-mix(in srgb, var(--accent) 10%, transparent)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)" }}
+        >
           {serverError}
         </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <label className="block text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-secondary)" }}>
             Current Password
           </label>
           <input
             type="password"
             placeholder="Enter current password"
             {...register("currentPassword")}
-            className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
+            className="w-full rounded-2xl px-4 py-3 text-sm outline-none transition"
+            style={{ border: "1px solid var(--border)", background: "var(--bg-input)", color: "var(--fg)" }}
           />
           {errors.currentPassword && (
-            <p className="text-red-500 text-sm mt-1">
+            <p className="mt-1 text-sm" style={{ color: "var(--accent)" }}>
               {errors.currentPassword.message}
             </p>
           )}
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-secondary)" }}>
             New Password
           </label>
           <input
             type="password"
             placeholder="Enter new password"
             {...register("newPassword")}
-            className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
+            className="w-full rounded-2xl px-4 py-3 text-sm outline-none transition"
+            style={{ border: "1px solid var(--border)", background: "var(--bg-input)", color: "var(--fg)" }}
           />
           {errors.newPassword && (
-            <p className="text-red-500 text-sm mt-1">
+            <p className="mt-1 text-sm" style={{ color: "var(--accent)" }}>
               {errors.newPassword.message}
             </p>
           )}
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fg-secondary)" }}>
             Confirm New Password
           </label>
           <input
             type="password"
             placeholder="Confirm new password"
             {...register("confirmNewPassword")}
-            className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
+            className="w-full rounded-2xl px-4 py-3 text-sm outline-none transition"
+            style={{ border: "1px solid var(--border)", background: "var(--bg-input)", color: "var(--fg)" }}
           />
           {errors.confirmNewPassword && (
-            <p className="text-red-500 text-sm mt-1">
+            <p className="mt-1 text-sm" style={{ color: "var(--accent)" }}>
               {errors.confirmNewPassword.message}
             </p>
           )}
@@ -116,7 +125,8 @@ export default function PasswordForm() {
         <button
           type="submit"
           disabled={isSubmitting || isPending}
-          className="w-full bg-[#2f6f7e] hover:bg-[#285c68] text-white text-sm font-semibold rounded-2xl py-3 transition disabled:opacity-50"
+          className="w-full rounded-2xl px-4 py-3.5 text-sm font-bold transition disabled:opacity-60"
+          style={{ background: "var(--brand)", color: "var(--fg-inverse)" }}
         >
           {isPending ? "Updating..." : "Update Password"}
         </button>
