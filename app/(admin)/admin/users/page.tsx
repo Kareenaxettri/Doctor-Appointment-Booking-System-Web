@@ -9,8 +9,8 @@ import {
 } from "@/lib/actions/admin-user-action";
 import { AdminUser, PaginationMeta } from "@/lib/api/admin-users";
 import { getInitials } from "@/lib/utils";
-import UserFormModal, { UserFormValues } from "@/components/UserFormModel";
-import ConfirmDeleteModal from "@/components/ConfirmDeleteModel";
+import UserFormModal, { UserFormValues } from "@/components/UserFormModal";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 
 const LIMIT = 10;
 
@@ -35,24 +35,38 @@ export default function AdminUsersPage() {
 
   const [toast, setToast] = useState<string | null>(null);
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (opts?: { page?: number; search?: string }) => {
+    const p = opts?.page ?? page;
+    const s = opts?.search ?? search;
     setLoading(true);
     setError(null);
-    const result = await handleListUsers({ page, limit: LIMIT, search });
+    const result = await handleListUsers({ page: p, limit: LIMIT, search: s });
     setLoading(false);
-
     if (!result.success) {
       setError(result.message || "Failed to load users");
       return;
     }
-
     setUsers(result.data || []);
     setMeta(result.meta || null);
   }, [page, search]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      const result = await handleListUsers({ page, limit: LIMIT, search });
+      if (cancelled) return;
+      setLoading(false);
+      if (!result.success) {
+        setError(result.message || "Failed to load users");
+        return;
+      }
+      setUsers(result.data || []);
+      setMeta(result.meta || null);
+    })();
+    return () => { cancelled = true; };
+  }, [page, search]);
 
   useEffect(() => {
     if (!toast) return;
@@ -150,14 +164,15 @@ export default function AdminUsersPage() {
     <div className="px-8 py-8 max-w-6xl">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#1d2b36]">Users</h1>
-          <p className="text-sm text-[#64748b] mt-1">
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--fg)" }}>Users</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--fg-secondary)" }}>
             View, search, create, edit, and remove platform accounts.
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="shrink-0 rounded-lg bg-[#2f6f7e] text-white text-sm font-medium px-4 py-2.5 hover:bg-[#3d8a9c] transition"
+          className="shrink-0 text-white text-sm font-medium px-4 py-2.5 transition hover:opacity-90"
+          style={{ borderRadius: 8, background: "var(--brand)" }}
         >
           + Add user
         </button>
@@ -172,7 +187,8 @@ export default function AdminUsersPage() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748b]"
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: "var(--fg-secondary)" }}
           >
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
@@ -181,12 +197,14 @@ export default function AdminUsersPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by name or email…"
-            className="w-full rounded-lg border border-[#e2e8f0] bg-white text-[#1d2b36] pl-9 pr-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2f6f7e]/30 focus:border-[#2f6f7e]"
+            className="w-full pl-9 pr-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[color:var(--brand)]/30 focus:border-[color:var(--brand)]"
+            style={{ borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--fg)" }}
           />
         </div>
         <button
           type="submit"
-          className="rounded-lg border border-[#e2e8f0] px-4 py-2.5 text-sm font-medium text-[#1d2b36] hover:bg-[#f4f7fb] transition"
+          className="px-4 py-2.5 text-sm font-medium transition hover:opacity-90"
+          style={{ borderRadius: 8, border: "1px solid var(--border)", color: "var(--fg)" }}
         >
           Search
         </button>
@@ -198,17 +216,18 @@ export default function AdminUsersPage() {
               setSearch("");
               setPage(1);
             }}
-            className="rounded-lg px-3 py-2.5 text-sm text-[#64748b] hover:text-[#1d2b36] transition"
+            className="px-3 py-2.5 text-sm transition hover:opacity-90"
+            style={{ borderRadius: 8, color: "var(--fg-secondary)" }}
           >
             Clear
           </button>
         )}
       </form>
 
-      <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden">
+      <div className="overflow-hidden" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: 10 }}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#e2e8f0] text-left text-xs uppercase tracking-wide text-[#64748b]">
+            <tr className="text-left text-xs uppercase tracking-wide" style={{ borderBottom: "1px solid var(--border-light)", color: "var(--fg-tertiary)" }}>
               <th className="px-5 py-3 font-medium">User</th>
               <th className="px-5 py-3 font-medium">Email</th>
               <th className="px-5 py-3 font-medium">Role</th>
@@ -219,9 +238,12 @@ export default function AdminUsersPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={5} className="px-5 py-16 text-center text-[#64748b]">
+                <td colSpan={5} className="px-5 py-16 text-center" style={{ color: "var(--fg-secondary)" }}>
                   <div className="inline-flex items-center gap-2">
-                    <span className="h-4 w-4 rounded-full border-2 border-[#2f6f7e]/30 border-t-[#2f6f7e] animate-spin" />
+                    <span
+                      className="h-4 w-4 rounded-full border-2 animate-spin"
+                      style={{ borderColor: "var(--border-light)", borderTopColor: "var(--brand)" }}
+                    />
                     Loading users…
                   </div>
                 </td>
@@ -231,10 +253,11 @@ export default function AdminUsersPage() {
             {!loading && error && (
               <tr>
                 <td colSpan={5} className="px-5 py-16 text-center">
-                  <p className="text-[#dc2626] text-sm font-medium">{error}</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--accent)" }}>{error}</p>
                   <button
-                    onClick={loadUsers}
-                    className="mt-3 text-sm text-[#2f6f7e] underline underline-offset-2"
+                    onClick={() => loadUsers()}
+                    className="mt-3 text-sm underline underline-offset-2"
+                    style={{ color: "var(--brand)" }}
                   >
                     Try again
                   </button>
@@ -244,10 +267,10 @@ export default function AdminUsersPage() {
 
             {!loading && !error && users.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-16 text-center text-[#64748b]">
+                <td colSpan={5} className="px-5 py-16 text-center" style={{ color: "var(--fg-secondary)" }}>
                   {search ? (
                     <>
-                      No users match <span className="font-medium text-[#1d2b36]">&ldquo;{search}&rdquo;</span>.
+                      No users match <span className="font-medium" style={{ color: "var(--fg)" }}>&ldquo;{search}&rdquo;</span>.
                     </>
                   ) : (
                     "No users yet. Add your first user to get started."
@@ -259,44 +282,56 @@ export default function AdminUsersPage() {
             {!loading &&
               !error &&
               users.map((user) => (
-                <tr key={user.id} className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f4f7fb]/60 transition">
+                <tr
+                  key={user.id}
+                  className="last:border-0 transition"
+                  style={{ borderBottom: "1px solid var(--border-light)" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-[#2f6f7e]/10 text-[#2f6f7e] text-xs font-semibold flex items-center justify-center shrink-0">
+                      <div
+                        className="h-8 w-8 rounded-full text-xs font-semibold flex items-center justify-center shrink-0"
+                        style={{ background: "var(--brand-light)", color: "var(--brand)" }}
+                      >
                         {getInitials(user.fullName)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-[#1d2b36] truncate">{user.fullName}</p>
-                        <p className="text-xs text-[#64748b] truncate">{user.contactNumber}</p>
+                        <p className="font-medium truncate" style={{ color: "var(--fg)" }}>{user.fullName}</p>
+                        <p className="text-xs truncate" style={{ color: "var(--fg-secondary)" }}>{user.contactNumber}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-[#64748b]">{user.email}</td>
+                  <td className="px-5 py-3.5" style={{ color: "var(--fg-secondary)" }}>{user.email}</td>
                   <td className="px-5 py-3.5">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+                      style={
                         user.role === "admin"
-                          ? "bg-[#b45309]/15 text-[#b45309]"
-                          : "bg-[#2f6f7e]/10 text-[#2f6f7e]"
-                      }`}
+                          ? { background: "color-mix(in srgb, var(--warning) 15%, transparent)", color: "var(--warning)" }
+                          : { background: "var(--brand-light)", color: "var(--brand)" }
+                      }
                     >
                       {user.role}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-[#64748b]">
+                  <td className="px-5 py-3.5" style={{ color: "var(--fg-secondary)" }}>
                     {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => openEdit(user)}
-                        className="rounded-md px-2.5 py-1.5 text-xs font-medium border border-[#e2e8f0] text-[#1d2b36] hover:bg-[#f4f7fb] transition"
+                        className="px-2.5 py-1.5 text-xs font-medium transition hover:opacity-90"
+                        style={{ borderRadius: 6, border: "1px solid var(--border)", color: "var(--fg)" }}
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setDeleteTarget(user)}
-                        className="rounded-md px-2.5 py-1.5 text-xs font-medium border border-[#dc2626]/20 text-[#dc2626] hover:bg-[#dc2626]/5 transition"
+                        className="px-2.5 py-1.5 text-xs font-medium transition hover:opacity-90"
+                        style={{ borderRadius: 6, border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)" }}
                       >
                         Delete
                       </button>
@@ -309,24 +344,26 @@ export default function AdminUsersPage() {
       </div>
 
       {!loading && !error && meta && meta.total > 0 && (
-        <div className="flex items-center justify-between mt-5 text-sm text-[#64748b]">
+        <div className="flex items-center justify-between mt-5 text-sm" style={{ color: "var(--fg-secondary)" }}>
           <p>
-            Showing page <span className="font-medium text-[#1d2b36]">{meta.page}</span> of{" "}
-            <span className="font-medium text-[#1d2b36]">{totalPages}</span> &middot;{" "}
+            Showing page <span className="font-medium" style={{ color: "var(--fg)" }}>{meta.page}</span> of{" "}
+            <span className="font-medium" style={{ color: "var(--fg)" }}>{totalPages}</span> &middot;{" "}
             {meta.total} total user{meta.total === 1 ? "" : "s"}
           </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-sm font-medium text-[#1d2b36] hover:bg-[#f4f7fb] transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
+              style={{ borderRadius: 8, border: "1px solid var(--border)", color: "var(--fg)" }}
             >
               Previous
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-sm font-medium text-[#1d2b36] hover:bg-[#f4f7fb] transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
+              style={{ borderRadius: 8, border: "1px solid var(--border)", color: "var(--fg)" }}
             >
               Next
             </button>
@@ -355,7 +392,7 @@ export default function AdminUsersPage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 right-6 bg-[#1d2b36] text-white text-sm px-4 py-2.5 rounded-lg shadow-lg">
+        <div role="status" aria-live="polite" className="fixed bottom-6 right-6 text-sm px-4 py-2.5 shadow-lg" style={{ borderRadius: 8, background: "var(--fg)", color: "var(--fg-inverse)" }}>
           {toast}
         </div>
       )}
