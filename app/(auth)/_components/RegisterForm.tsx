@@ -12,10 +12,12 @@ import {
 } from "@/app/(auth)/_components/schema";
 
 import { handleRegisterUser } from "@/lib/actions/auth-action";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const router = useRouter();
 
@@ -30,6 +32,11 @@ export default function RegisterPage() {
   const onSubmit = (data: RegisterFormData) => {
     setError("");
 
+    if (!agreedToTerms) {
+      setError("You must agree to the terms and conditions to create an account.");
+      return;
+    }
+
     startTransition(async () => {
       try {
         const result = await handleRegisterUser(data);
@@ -39,208 +46,150 @@ export default function RegisterPage() {
         } else {
           setError(result.message || "Registration failed");
         }
-      } catch (error: any) {
-        setError(error?.message || "Registration failed");
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : "Registration failed");
       }
     });
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] flex items-center justify-center p-4">
-
-      <div className="bg-white rounded-[32px] shadow-2xl overflow-hidden flex w-full max-w-5xl">
-
-        {/* LEFT PANEL - DOCTOR IMAGE (NO COLOR OVERLAY) */}
-        <div className="hidden md:flex md:w-[45%] relative flex-col min-h-[580px]">
-
-          <div className="absolute inset-0">
-            <img
-              src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGRvY3RvcnN8ZW58MHx8MHx8fDA%3D"
-              alt="Doctors at Medi Click"
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          {/* subtle readability only (NOT color overlay) */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black/25 text-white">
-            <h2 className="text-xl font-bold mb-1">
-              Medi Click
-            </h2>
-            <p className="text-sm text-white/90 leading-snug">
-              Connect with verified doctors and book appointments instantly.
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT PANEL */}
-        <div className="flex-1 p-10 md:p-14 relative">
-
-          <div className="mb-6">
-            <h1 className="text-[38px] font-bold text-[#1d2b36] mb-1">
-              Create Account
-            </h1>
-            <p className="text-sm text-gray-500">
-              Register to access doctors and manage appointments
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
-            {error && (
-              <div className="p-3 rounded-xl bg-red-100 text-red-600 text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* FULL NAME */}
-            <div>
-              <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                Full Name
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your full name"
-                {...register("fullName")}
-                className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
-              />
-              {errors.fullName && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.fullName.message}
-                </p>
-              )}
-            </div>
-
-            {/* EMAIL */}
-            <div>
-              <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                Email Address
-              </label>
-              <input
-                type="email"
-                placeholder="Enter email"
-                {...register("email")}
-                className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            {/* PHONE NUMBER + GENDER */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="98XXXXXXXX"
-                  {...register("contactNumber")}
-                  className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                  outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
-                />
-                {errors.contactNumber && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.contactNumber.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                  Gender
-                </label>
-                <select
-                  defaultValue=""
-                  {...register("gender")}
-                  className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                  outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
+    <div className="flex min-h-screen items-center justify-center p-4" style={{ background: "var(--bg)" }}>
+      <div className="w-full max-w-md">
+        <div className="card overflow-hidden">
+          {/* Brand header */}
+          <div className="border-b px-8 pt-8 pb-0" style={{ borderColor: "var(--border-light)" }}>
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-bold"
+                  style={{ background: "var(--brand)", color: "var(--fg-inverse)" }}
                 >
-                  <option value="" disabled>
-                    Select
-                  </option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-                {errors.gender && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.gender.message}
+                  M
+                </div>
+                <span className="text-sm font-semibold" style={{ color: "var(--fg)" }}>MediClick</span>
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
+
+          <div className="p-8">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold" style={{ color: "var(--fg)" }}>Create account</h1>
+              <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>Join MediClick to book doctor appointments</p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <div className="rounded-md border px-3 py-2.5 text-sm" style={{ background: "#fef2f2", borderColor: "var(--accent)", color: "var(--accent)" }}>
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "var(--fg-secondary)" }}>Full name</label>
+                <input type="text" placeholder="Your full name" {...register("fullName")} className="input-field" />
+                {errors.fullName && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: "var(--accent)" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {errors.fullName.message}
                   </p>
                 )}
               </div>
-            </div>
 
-            {/* PASSWORD */}
-            <div>
-              <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                Password
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "var(--fg-secondary)" }}>Email address</label>
+                <input type="email" placeholder="you@example.com" {...register("email")} className="input-field" />
+                {errors.email && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: "var(--accent)" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "var(--fg-secondary)" }}>Phone number</label>
+                  <input type="text" placeholder="98XXXXXXXX" {...register("contactNumber")} className="input-field" />
+                  {errors.contactNumber && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: "var(--accent)" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      {errors.contactNumber.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "var(--fg-secondary)" }}>Gender</label>
+                  <select defaultValue="" {...register("gender")} className="input-field">
+                    <option value="" disabled>Select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                  {errors.gender && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: "var(--accent)" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      {errors.gender.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "var(--fg-secondary)" }}>Password</label>
+                <input type="password" placeholder="Create a password" {...register("password")} className="input-field" />
+                {errors.password && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: "var(--accent)" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "var(--fg-secondary)" }}>Confirm password</label>
+                <input type="password" placeholder="Repeat your password" {...register("confirmPassword")} className="input-field" />
+                {errors.confirmPassword && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: "var(--accent)" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => {
+                    setAgreedToTerms(e.target.checked);
+                    if (error === "You must agree to the terms and conditions to create an account.") setError("");
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded"
+                  style={{ accentColor: "var(--brand)" }}
+                />
+                <span className="text-[13px]" style={{ color: "var(--fg-secondary)" }}>
+                  I agree to the terms and conditions
+                </span>
               </label>
-              <input
-                type="password"
-                placeholder="Create password"
-                {...register("password")}
-                className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
-              />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
 
-            {/* CONFIRM PASSWORD */}
-            <div>
-              <label className="block text-[15px] font-medium mb-2 text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                placeholder="Confirm password"
-                {...register("confirmPassword")}
-                className="w-full bg-[#f4f7fb] border border-gray-200 rounded-2xl px-5 py-4 text-[15px] text-gray-800
-                outline-none focus:border-[#2f6f7e] focus:ring-2 focus:ring-[#2f6f7e]/20 transition"
-              />
-              {errors.confirmPassword && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
+              <button
+                type="submit"
+                disabled={isSubmitting || isPending}
+                className="btn-primary w-full py-3"
+              >
+                {isPending ? "Creating account..." : "Create account"}
+              </button>
+            </form>
 
-            {/* TERMS */}
-            <div className="flex items-center gap-3">
-              <input type="checkbox" className="w-4 h-4 accent-[#2f6f7e]" />
-              <p className="text-sm text-gray-600">
-                I agree to the terms and conditions
-              </p>
-            </div>
-
-            {/* BUTTON */}
-            <button
-              type="submit"
-              disabled={isSubmitting || isPending}
-              className="w-full bg-[#2f6f7e] hover:bg-[#285c68] text-white py-4 rounded-2xl text-[16px] font-semibold transition shadow-lg disabled:opacity-50"
-            >
-              {isPending ? "Creating Account..." : "Create Account"}
-            </button>
-          </form>
-
-          {/* LOGIN */}
-          <p className="text-center text-gray-500 text-sm mt-8">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-[#2f6f7e] font-semibold hover:underline"
-            >
-              Login here
-            </Link>
-          </p>
+            <p className="mt-6 text-center text-sm" style={{ color: "var(--fg-secondary)" }}>
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold" style={{ color: "var(--brand)" }}>
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
