@@ -6,6 +6,8 @@ import {
   whoAmI,
   updateProfile,
   updatePassword,
+  forgotPassword,
+  resetPassword,
 } from "@/lib/api/auth";
 
 import {
@@ -17,6 +19,7 @@ import {
   setTokenCookie,
   storeUserData,
   getTokenCookie,
+  getUserData,
 } from "../cookies";
 
 import { getApiErrorMessage } from "@/lib/utils";
@@ -28,7 +31,7 @@ export const handleRegisterUser = async (data: RegisterFormData) => {
     if (result.success) {
       return {
         success: true,
-        message: result.message,
+        message: result.message || "Registration successful",
         data: result.data,
       };
     }
@@ -37,10 +40,10 @@ export const handleRegisterUser = async (data: RegisterFormData) => {
       success: false,
       message: result.message || "Registration failed",
     };
-  } catch (error: Error | any) {
+  } catch (error: unknown) {
     return {
       success: false,
-      message: error?.message || "Registration failed",
+      message: getApiErrorMessage(error, "Registration failed"),
     };
   }
 };
@@ -67,10 +70,10 @@ export const handleLoginUser = async (data: LoginFormData) => {
       success: false,
       message: result.message || "Login failed",
     };
-  } catch (error: Error | any) {
+  } catch (error: unknown) {
     return {
       success: false,
-      message: error?.message || "Login failed",
+      message: getApiErrorMessage(error, "Login failed"),
     };
   }
 };
@@ -103,10 +106,7 @@ export const handleGetCurrentUser = async () => {
   } catch (error: unknown) {
     return {
       success: false,
-      message: getApiErrorMessage(
-        error,
-        "Failed to load user detail"
-      ),
+      message: getApiErrorMessage(error, "Failed to load user detail"),
     };
   }
 };
@@ -125,7 +125,14 @@ export const handleUpdateProfile = async (formData: FormData) => {
     const result = await updateProfile(token, formData);
 
     if (result.success) {
-      await storeUserData(result.data);
+      if (result.data) {
+        const existing = (await getUserData()) as Record<string, unknown> | null;
+        const merged = { ...(existing || {}), ...result.data };
+        if (!merged.profileImage && existing?.profileImage) {
+          merged.profileImage = existing.profileImage;
+        }
+        await storeUserData(merged);
+      }
 
       return {
         success: true,
@@ -141,10 +148,7 @@ export const handleUpdateProfile = async (formData: FormData) => {
   } catch (error: unknown) {
     return {
       success: false,
-      message: getApiErrorMessage(
-        error,
-        "Failed to update profile"
-      ),
+      message: getApiErrorMessage(error, "Failed to update profile"),
     };
   }
 };
@@ -168,7 +172,7 @@ export const handleUpdatePassword = async (data: {
     if (result.success) {
       return {
         success: true,
-        message: result.message,
+        message: result.message || "Password updated successfully",
       };
     }
 
@@ -179,10 +183,55 @@ export const handleUpdatePassword = async (data: {
   } catch (error: unknown) {
     return {
       success: false,
-      message: getApiErrorMessage(
-        error,
-        "Failed to update password"
-      ),
+      message: getApiErrorMessage(error, "Failed to update password"),
+    };
+  }
+};
+
+export const handleForgotPassword = async (email: string) => {
+  try {
+    const result = await forgotPassword(email);
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message || "Failed to send reset email",
+      };
+    }
+
+    return {
+      success: true,
+      message: result.message || "Password reset instructions sent to your email",
+      // Only present when SMTP isn't configured on the backend (dev fallback).
+      resetUrl: result.data?.resetUrl as string | undefined,
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      message: getApiErrorMessage(error, "Failed to send reset email"),
+    };
+  }
+};
+
+export const handleResetPassword = async (data: { token: string; newPassword: string }) => {
+  try {
+    const result = await resetPassword(data);
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message || "Failed to reset password",
+      };
+    }
+
+    return {
+      success: true,
+      message: result.message || "Password reset successfully",
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      message: getApiErrorMessage(error, "Failed to reset password"),
     };
   }
 };
