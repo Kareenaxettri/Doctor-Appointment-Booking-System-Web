@@ -4,10 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { getProfileImageUrl, getInitials } from "@/lib/utils";
+import { useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navItems = [
   { href: "/dashboard", label: "Find Doctors", icon: SearchDoctorIcon },
   { href: "/appointments", label: "My Appointments", icon: CalendarIcon },
+  { href: "/favourites", label: "Favorites", icon: HeartIcon },
+  { href: "/payments", label: "Payments", icon: WalletIcon },
   { href: "/profile", label: "Profile", icon: UserIcon },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -24,112 +28,188 @@ export default function AppShell({
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const avatarUrl = getProfileImageUrl(user?.profileImage);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
- 
   const isAdminSection = pathname.startsWith("/admin");
   const items = isAdminSection
-  ? [adminNavItem]
-  : user?.role === "admin"
-  ? [...navItems, adminNavItem]
-  : navItems;
+    ? [adminNavItem]
+    : user?.role === "admin"
+      ? [...navItems, adminNavItem]
+      : navItems;
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] flex">
-      {/* SIDEBAR */}
-      <aside className="hidden md:flex md:w-64 flex-col bg-white border-r border-gray-100 p-5">
-        <div className="flex items-center gap-2 mb-8 px-1">
-          <div className="w-9 h-9 rounded-xl bg-[#2f6f7e] text-white flex items-center justify-center text-lg font-bold">
-            +
+    <div className="flex min-h-screen" style={{ background: "var(--bg)" }}>
+      {/* Desktop Sidebar */}
+      <aside
+        className="hidden w-60 flex-col border-r md:flex"
+        style={{ background: "var(--bg-sidebar)", borderColor: "var(--border-light)" }}
+      >
+        <div className="px-5 py-5 border-b" style={{ borderColor: "var(--border-light)" }}>
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-bold"
+              style={{ background: "var(--brand)", color: "var(--fg-inverse)" }}
+            >
+              M
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>MediClick</p>
+            </div>
           </div>
-          <span className="text-lg font-bold text-[#1d2b36]">MediClick</span>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-0.5">
           {items.map((item) => {
-            const active =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
-                  active
-                    ? "bg-[#2f6f7e] text-white shadow-md"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-[#1d2b36]"
-                }`}
+                aria-current={active ? "page" : undefined}
+                className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition"
+                style={{
+                  background: active ? "var(--brand-light)" : "transparent",
+                  color: active ? "var(--brand)" : "var(--fg-secondary)",
+                }}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto rounded-2xl bg-[#f4f7fb] p-4">
-          <p className="text-sm font-semibold text-[#1d2b36] mb-1">
-            Need help?
-          </p>
-          <p className="text-xs text-gray-500 mb-3">
-            Our medical support team is available 24/7.
-          </p>
+        <div className="px-3 pb-4">
           <button
             type="button"
             onClick={logout}
-            className="w-full text-xs font-semibold text-white bg-[#2f6f7e] hover:bg-[#285c68] rounded-xl py-2 transition"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition"
+            style={{ color: "var(--fg-tertiary)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >
+            <LogoutSmallIcon className="h-4 w-4" />
             Logout
           </button>
         </div>
       </aside>
 
-      {/* MAIN */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* TOPBAR */}
-        <header className="flex items-center gap-4 bg-white border-b border-gray-100 px-6 py-4">
-          <div className="flex-1 flex items-center gap-2 bg-[#f4f7fb] rounded-2xl px-4 py-2.5 max-w-md">
-            <SearchIcon className="w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search doctors, specializations, clinics..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
-              disabled
-            />
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header */}
+        <header
+          className="flex items-center justify-between gap-4 border-b px-5 py-3"
+          style={{ background: "var(--bg-surface)", borderColor: "var(--border-light)" }}
+        >
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex h-8 w-8 items-center justify-center rounded-md md:hidden transition"
+              style={{ color: "var(--fg-secondary)" }}
+              aria-label="Toggle menu"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                {mobileMenuOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                ) : (
+                  <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+                )}
+              </svg>
+            </button>
+
+            <p className="page-title hidden sm:block">{title}</p>
           </div>
 
-          <button
-            type="button"
-            className="w-10 h-10 rounded-full bg-[#f4f7fb] flex items-center justify-center text-gray-500"
-            aria-label="Notifications"
-          >
-            <BellIcon className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
 
-          <Link href="/profile" className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold text-[#1d2b36] leading-tight">
-                {user?.fullName || "..."}
-              </p>
-              <p className="text-xs text-gray-400 leading-tight">
-                {user?.role === "admin" ? "Administrator" : "Member"}
-              </p>
-            </div>
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={user?.fullName || "Profile"}
-                className="w-10 h-10 rounded-full object-cover border border-gray-100"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-[#2f6f7e] text-white flex items-center justify-center text-sm font-semibold">
-                {getInitials(user?.fullName)}
+            <Link href="/profile" className="flex items-center gap-2.5 rounded-md px-2 py-1.5 transition"
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <div className="hidden text-right sm:block">
+                <p className="text-[13px] font-medium" style={{ color: "var(--fg)" }}>{user?.fullName || "..."}</p>
+                <p className="text-[11px]" style={{ color: "var(--fg-tertiary)" }}>{user?.role === "admin" ? "Administrator" : "Member"}</p>
               </div>
-            )}
-          </Link>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={user?.fullName || "Profile"}
+                  className="h-8 w-8 rounded-full object-cover"
+                  style={{ border: "1px solid var(--border)" }}
+                />
+              ) : (
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
+                  style={{ background: "var(--brand)", color: "var(--fg-inverse)" }}
+                >
+                  {getInitials(user?.fullName)}
+                </div>
+              )}
+            </Link>
+          </div>
         </header>
 
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-          <h1 className="text-sm font-medium text-gray-400 mb-4">{title}</h1>
+        {/* Mobile Sidebar Overlay */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-40 md:hidden">
+            <div
+              className="absolute inset-0"
+              style={{ background: "rgba(0,0,0,0.3)" }}
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div
+              className="absolute left-0 top-0 bottom-0 w-64 flex flex-col animate-fade-in"
+              style={{ background: "var(--bg-sidebar)", borderRight: "1px solid var(--border-light)" }}
+            >
+              <div className="px-4 py-4 border-b flex items-center gap-2.5" style={{ borderColor: "var(--border-light)" }}>
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-bold"
+                  style={{ background: "var(--brand)", color: "var(--fg-inverse)" }}
+                >
+                  M
+                </div>
+                <p className="text-sm font-semibold" style={{ color: "var(--fg)" }}>MediClick</p>
+              </div>
+              <nav className="flex-1 px-3 py-3 space-y-0.5">
+                {items.map((item) => {
+                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      aria-current={active ? "page" : undefined}
+                      className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition"
+                      style={{
+                        background: active ? "var(--brand-light)" : "transparent",
+                        color: active ? "var(--brand)" : "var(--fg-secondary)",
+                      }}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+              <div className="px-3 pb-4">
+                <button
+                  type="button"
+                  onClick={() => { setMobileMenuOpen(false); logout(); }}
+                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition"
+                  style={{ color: "var(--fg-tertiary)", background: "var(--bg-hover)" }}
+                >
+                  <LogoutSmallIcon className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-y-auto p-5 md:p-6" style={{ background: "var(--bg)" }}>
           {children}
         </main>
       </div>
@@ -137,44 +217,11 @@ export default function AppShell({
   );
 }
 
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-      <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function BellIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path
-        d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function SearchDoctorIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path
-        d="M9 11a3 3 0 100-6 3 3 0 000 6z"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <path
-        d="M4 19c0-2.8 2.2-5 5-5s5 2.2 5 5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <path d="M9 11a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 19c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <circle cx="17.5" cy="14.5" r="2.5" stroke="currentColor" strokeWidth="2" />
       <path d="M19.4 16.4L21 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
@@ -202,14 +249,18 @@ function UserIcon({ className }: { className?: string }) {
 function ShieldIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path
-        d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function WalletIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M16 10h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M3 10h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -218,13 +269,25 @@ function SettingsIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-      <path
-        d="M19.4 13a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V19a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34h0A1.7 1.7 0 0010 3.09V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87v0a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M19.4 13a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V19a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34h0A1.7 1.7 0 0010 3.09V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87v0a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function HeartIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LogoutSmallIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="16,17 21,12 16,7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
